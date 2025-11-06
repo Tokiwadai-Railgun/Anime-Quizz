@@ -1,0 +1,65 @@
+import text from "../text.json";
+
+export component NavBar({ language, page }: { language: Tracked<string>, page: Tracked<string> }) {
+    <div class='navbar-container'>
+        // Since ripple.js does not support routing for now (maybe never ..) we will use buttons & tracked variables to render differents tabs from the App.ripple
+        <div class='navbar'>
+            <button onClick={() => @page = 'play'}>{text[@language].navbar.play}</button>
+            <button onClick={() => @page = 'profile'}>{text[@language].navbar.profile}</button>
+        </div> 
+
+        // add a language selector at the end of the navbar
+        <div class='language-selector'>
+            <select onChange={(e) => @language = e.target.value} value={@language}>
+                <option value='en'>{'English'}</option>
+                <option value='fr'>{'Français'}</option>
+            </select>
+        </div>
+    </div>
+
+
+
+
+
+    // style is done with the catpuccin palette, color defined using variables, all the variables are in the index.html
+    <style>
+        .navbar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: var(--mantle);
+            border-bottom: 2px solid var(--surface0);
+        }
+
+        .navbar button {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.2em;
+            margin: 0 10px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .navbar button:hover {
+            background-color: var(--surface0);
+        }
+
+        .language-selector select {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--surface0);
+            background-color: var(--mantle);
+            color: var(--text);
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .language-selector select:hover {
+            background-color: var(--surface0);
+        }
+    </style>
+}

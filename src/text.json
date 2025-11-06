@@ -1,0 +1,48 @@
+{
+    "fr": {
+        "navbar" : {
+            "play": "Jouer",
+            "profile": "Paramètres"
+        },
+        "play": {
+            "title": "Jouer en tant que : ",
+            "start": "Commencer le quizz",
+            "next": "Question suivante",
+            "restart": "Recommencer le quizz",
+            "success": "Bravo !",
+            "failure": "Dommage, la bonne réponse était : ",
+            "critical_failure": "Pas une bonne réponse :c, ça se passera mieux la prochaine fois",
+            "critical_success": "Score parfait :D, incroyable !",
+            "mid_score": "Pas mal, tu peux tenter mieux ?"
+        },
+        "profile": {
+            "title": "Paramètres",
+            "mal_placeholder": "Nom d'utilisateur MyAnimeList",
+            "advice": "Entrez votre nom d'utilisateur MyAnimeList pour obtenir des recommandations personnalisées.",
+            "username_placeholder": "Nom d'utilisateur"
+        }
+    },
+    "en": {
+        "navbar" : {
+            "play": "Play",
+            "profile": "Settings"
+        },
+        "play": {
+            "title": "Play as : ",
+            "start": "Start Quiz",
+            "next": "Next Question",
+            "restart": "Restart Quiz",
+            "success": "Success !",
+            "failure": "Too bad, the correct answer was : ",
+            "critical_failure": ":c, better luck next time!",
+            "critical_success": ":D, amazing job!",
+            "mid_score": "Not bad, you can do better!"
+        },
+        "profile": {
+            "title": "Settings",
+            "mal_placeholder": "MyAnimeList Username",
+            "advice": "Enter your MyAnimeList username to get personalized recommendations.",
+            "username_placeholder": "Username"
+        }
+    }
+}

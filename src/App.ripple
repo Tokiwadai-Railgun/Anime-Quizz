@@ -1,0 +1,61 @@
+import { track } from 'ripple';
+import { NavBar } from './components/NavBar.ripple';
+import { Profile } from './pages/Profile.ripple';
+import { Play } from './pages/Play.ripple';
+import text from './text.json';
+
+export component App() {
+	<div class='container'>
+    let language = track('en');
+    let page = track('play');
+
+    let username = track("guest");
+
+    <NavBar {language} {page} />
+ 
+    if (@page === 'play') {
+      <Play {language} {username} />
+    }
+    else if (@page === 'profile') {
+      <Profile {language} {username} />
+    } 
+	</div>
+
+  <style>
+    .container {
+      text-align: center;
+      font-family: "Arial", sans-serif;
+    }
+
+    p {
+      margin: 12px 0;
+      font-family: "Arial", sans-serif;
+    }
+
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "Courier New", monospace;
+      color: #333;
+    }
+
+    button {
+      font-size: 1.5em;
+      padding: 6px 12px;
+      margin: 0 6px;
+      cursor: pointer;
+      border: none;
+      font-family: "Courier New", monospace;
+    }
+
+    button:hover {
+      background-color: #e0e0e0;
+    }
+
+    .count {
+      margin: 0 12px;
+      font-size: 1.5em;
+    }
+  </style>
+}

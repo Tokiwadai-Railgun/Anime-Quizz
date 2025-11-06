@@ -1,0 +1,190 @@
+import { track } from "ripple";
+import text from "../text.json";
+import characters from "../data/characters.json"
+
+// returns a list of 10 random characters from the characters.json file, also return a list of all the animes titles used
+function extractCharacters() {
+    let list = [];
+    let animeTitles = [];
+
+    for (let i = 0; i < 10; i ++) {
+        // Select the anime to pick a character
+        let randomNumber = Math.floor(Math.random() * 20); 
+
+        // then pick a random character from this anime
+        let characterListLength = characters[randomNumber].characters.length;
+        let randomCharacterNumber = Math.floor(Math.random() * characterListLength);
+        list.push( { char: characters[randomNumber].characters[randomCharacterNumber], anime: characters[randomNumber].canonical_title } );
+
+        // add the anime title to the animeTitles list if not already present
+        if (!animeTitles.includes(characters[randomNumber].canonical_title)) {
+            animeTitles.push(characters[randomNumber].canonical_title);
+        }
+
+    }
+
+    console.log(list);
+    console.log(animeTitles);
+
+    // For each characters in the list, generate buttons
+    for (const character of list) {
+        let buttons = generateButtons(animeTitles, character.anime);
+        character['buttons'] = buttons;
+    }
+    return {charactersList: list, animeList: animeTitles};
+}
+
+function generateButtons(animeList: any, correctAnime: string) {
+    let list = [];
+    list.push(correctAnime);
+
+    for (let i = 0; i < 3; i++) {
+        let index = Math.floor(Math.random() * animeList.length);
+        
+
+        // to avoid getting multiple times the same title
+        if (!list.includes(animeList[index])) {
+            console.log(animeList[index]);
+            console.log(list);
+            list.push(animeList[index]);
+        } else {
+            i--;
+        }
+    }
+
+    // Then randomise the array
+    let currentIndex = list.length;
+
+    while (currentIndex != 0) {
+        let randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        [list[currentIndex], list[randomIndex]] = [
+        list[randomIndex], list[currentIndex]];
+    }
+
+    return list;
+}
+
+export component Play( { language, username }: { language: Tracked<string>, username: Tracked<string>} ) {
+    let gameToggle = track(0); // 0 = not started, 1 = started, 2 = ended
+    let totalScore = track(0);
+
+    if (@gameToggle == 0) {
+        <div>
+            <h1>{text[@language].play.title + @username + " ?"}</h1>
+
+            <button type="submit" onClick={() => @gameToggle = true}>
+                {text[@language].play.start}
+            </button>
+        </div>
+    }
+    else if (@gameToggle == 1) {
+        let { charactersList, animeList } = extractCharacters();
+
+        let charIndex = track(0);
+        let correct = track(0); // 0 = no answer yet, 1 = correct, 2 = wrong
+
+        @totalScore = 0;
+
+        <div class="character-box">
+            <img src={charactersList[@charIndex].char.image} alt="Character Image" width="200" height="300" />
+        
+            <div class="choice-buttons">
+                // get 3 random anime title + correct anime
+                let buttonList = generateButtons(animeList, charactersList[@charIndex].anime);
+                console.log(buttonList);
+
+                for (const button of charactersList[@charIndex].buttons) {
+                    <button onClick={() => {
+                        if (button == charactersList[@charIndex].anime) {
+                            @correct = 1;
+                        } else {
+                            // <p>Wrong! The correct answer was {charactersList[@charIndex].anime}.</p>
+                            @correct = 2;
+                        }
+
+                        // move to the next character
+                    }} >
+                        {button}
+                    </button>
+
+                }
+            </div>
+
+            if (@correct == 1) {
+                <p>{text[@language].play.success}</p>
+                @totalScore = @totalScore + 1;
+            } else if (@correct == 2) {
+                <p>{text[@language].play.failure + charactersList[@charIndex].anime + "."}</p>
+            }
+
+            if (@correct != 0) {
+                <button onClick={() => {
+                    @charIndex = @charIndex + 1;
+                    @correct = 0;
+                    if (@charIndex >= 10) {
+                        @gameToggle = 2;
+                    }
+                }} >
+                    {"Suivant"}
+                </button>
+            }
+        </div>
+    } else {
+        <h1>{"Score : " + @totalScore + " / 10"}</h1>
+        if (@totalScore == 10) {
+            <p>{text[@language].play.critical_success}</p>
+        } else if (@totalScore >= 0) {
+            <p>{text[@language].play.critical_failure}</p>
+        } else {
+            <p>{text[@language].play.mid_score}</p>
+        }
+    }
+
+    <style>
+        div {
+            margin: 20px;
+            font-family: "Arial", sans-serif;
+        }
+
+        p {
+            margin-top: 15px;
+            color: var(--subtext0);
+        }
+
+        h1 {
+            color: var(--text);
+        }
+    
+        button {
+            padding: 0.7em 1.4em;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--surface1);
+            color: var(--text);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .choice-buttons {
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .choice-buttons button {
+            width: 200px;
+            height: 60px;
+        }
+
+        button:hover {
+            background-color: var(--surface2);
+        }
+
+
+    </style>
+}
