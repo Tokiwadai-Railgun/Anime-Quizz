@@ -8,10 +8,13 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.6",
+    "@libsql/client": "^0.15.15",
+    "argon2": "^0.44.0",
     "hono": "^4.10.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "i": "^0.3.7",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"
   }
