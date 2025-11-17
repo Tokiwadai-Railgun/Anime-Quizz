@@ -3,10 +3,18 @@ import { Hono } from 'hono'
 import { createClient } from '@libsql/client'
 import { hash, verify } from 'argon2'
 import crypto from "crypto";
-import { error } from 'console';
+import { cors } from 'hono/cors';
+import { getCookie, setCookie } from 'hono/cookie';
 
 const db = createClient({ url: "file:database.db" });
 const app = new Hono()
+
+app.use("*", cors({
+    origin: "http://localhost:3000",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    credentials: true
+}))
 
 initDatabase();
 
@@ -19,29 +27,59 @@ app.get("/leaderboard", async (c) => {
     return c.json(res.rows[0]);
 })
 
+app.post("/logout", async (c) => {
+    const token = getCookie(c, "session");
+
+    if (!token) {
+        return c.json({ success: false, error: "No session" }, 401);
+    }
+
+    // Remove session from DB
+    await db.execute({
+        sql: `DELETE FROM sessions WHERE token = ?`,
+        args: [token]
+    });
+
+    // Delete the cookie
+    setCookie(c, "session", "", {
+        httpOnly: true,
+        secure: false, 
+        sameSite: "Lax",
+        maxAge: 0,
+        path: "/"
+    });
+
+    return c.json({ success: true });
+});
+
 app.post("/score", async (c) => {
+    console.log("Request received")
     if (!c.req.header("Content-Type")?.includes("application/json")) {
         return c.json({ success: false, error: "Invalid Content-Type" }, 400);
     }
 
-    const { token, score } = await c.req.json();
+    const token = getCookie(c, "session");
+    if (!token) {
+        return c.json({ success: false, error: "Missing session token" }, 401);
+    }
 
-    if (!token || typeof score !== "number") {
+    const { score } = await c.req.json();
+
+    if (typeof score !== "number") {
         return c.json({ success: false, error: "Missing or invalid fields" }, 400);
     }
+
 
     // Verify session
     const sessionRes = await db.execute({
         sql: `
-            SELECT user_id, expires_at
-            FROM sessions
-            WHERE token = ?
-        `,
+SELECT user_id, expires_at FROM sessions WHERE token = ?
+`,
         args: [token]
     });
 
     // Verifying that the session is valid & with correct expiration
-    const session = sessionRes.rows[0];
+    const session = into<Session>(sessionRes.rows[0]);
     if (!session) {
         return c.json({ success: false, error: "Invalid session" }, 401);
     }
@@ -53,12 +91,22 @@ app.post("/score", async (c) => {
     const userId = session.user_id;
 
     // Update score
+    const result = await db.execute({
+        sql: `
+SELECT score FROM users WHERE id = ?
+`,
+        args: [userId]
+    });
+
+    const currentScore = into<{ score: number }>(result.rows[0]);
+    if (currentScore.score > score) {
+        return c.json({ success: true });
+    }
+
     await db.execute({
         sql: `
-            UPDATE users
-            SET score = ?
-            WHERE id = ?
-        `,
+UPDATE users SET score = ? WHERE id = ?
+`,
         args: [score, userId]
     });
 
@@ -83,14 +131,15 @@ app.post("/register", async (c) => {
     try {
         await db.execute({
             sql: `
-                INSERT INTO users (username, password_hash)
-                VALUES (?, ?)
-            `,
+INSERT INTO users (username, password_hash)
+VALUES (?, ?)
+`,
             args: [username, passwordHash]
         });
     } catch (err) {
         return c.json({ success: false, error: "Username already exists" }, 409)
     }
+
 
     return c.json({ success: true })
 });
@@ -112,7 +161,7 @@ app.post("/login", async (c) => {
         args: [username]
     });
 
-    const user = result.rows[0];
+    const user = into<User>(result.rows[0]);
     if (!user) {
         return c.json({ success: false, error: "Invalid username or password" }, 401)
     }
@@ -129,11 +178,19 @@ app.post("/login", async (c) => {
 
     await db.execute({
         sql: `
-            INSERT INTO sessions (user_id, token, expires_at)
-            VALUES (?, ?, ?)
-        `,
+INSERT INTO sessions (user_id, token, expires_at)
+VALUES (?, ?, ?)
+`,
         args: [user.id, token, expiresAt]
     })
+
+    setCookie(c , "session", token, {
+        httpOnly: false,
+        sameSite: "Lax",
+        secure: false,
+        maxAge: 60 * 60 * 24,
+        path: "/"
+    });
 
     return c.json({
         success: true,
@@ -143,9 +200,13 @@ app.post("/login", async (c) => {
 })
 
 
+function into<T>(row: any): T {
+    return row as unknown as T;
+}
+
 const server = serve({
     fetch: app.fetch,
-    port: 3000
+    port: 3003
 }, (info) => {
         console.log(`Server is running on http://localhost:${info.port}`)
     })
@@ -166,6 +227,29 @@ process.on('SIGTERM', () => {
     })
 })
 
+
+type User = {
+    id: number,
+    username: string,
+    password_hash: string,
+    score: number,
+    created_at: string
+}
+
+type Session = {
+    id: number,
+    user_id: number,
+    token: string,
+    expires_at: string,
+    created_at: string,
+}
+
+type Score = {
+    id: number,
+    username: string,
+    score: number,
+    created_at: string
+}
 
 export async function initDatabase() {
     await db.execute(`
