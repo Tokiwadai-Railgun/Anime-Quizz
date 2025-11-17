@@ -10,14 +10,15 @@ export component App() {
     let page = track('play');
 
     let username = track("guest");
+    let loggedIn = track(false);
 
     <NavBar {language} {page} />
  
     if (@page === 'play') {
-      <Play {language} {username} />
+      <Play {language} {username}  {loggedIn} />
     }
     else if (@page === 'profile') {
-      <Profile {language} {username} />
+      <Profile {language} {username} {loggedIn} />
     } 
 	</div>
 

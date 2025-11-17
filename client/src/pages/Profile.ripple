@@ -1,14 +1,55 @@
 import text from "../text.json";
-export component Profile({ language, username }: { language: Tracked<string>, username: Tracked<string> }) {
-    <div>
-        <h1>{text[@language].profile.title}</h1>
+import { track } from "ripple"; 
 
-        <div class="input-group">
-            <input type="text" placeholder={text[@language].profile.username_placeholder} value={@username} onInput={(e) => @username = e.target.value} />
+async function login(username, password, status: Tracked<boolean>) {
+    console.log("querrying")
+    const res = await fetch("http://localhost:3003/login", {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: username, password: password }),
+        credentials: "include",
+        method: "POST"
+    })
+
+    if (res.ok) {
+        @status = true
+    }
+}
+
+async function logout(status: Tracked<boolean>) {
+    const res = await fetch("http://localhost:3003/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+
+    if (res.ok) {
+        @status = false
+    }
+}
+
+
+export component Profile({ language, username, loggedIn }: { language: Tracked<string>, username: Tracked<string>, loggedIn: Tracked<boolean>}) {
+    let password = track("");
+
+    if (@loggedIn) {
+        <div>
+            <p>{text[@language].profile.logged + @username}</p>
+            <button type="submit" onclick={() => logout(loggedIn)}>{text[@language].profile.logout}</button>
         </div>
+    } else {
+        <div>
+            <h1>{text[@language].profile.title}</h1>
 
-        <p>{text[@language].profile.advice}</p>
-    </div>
+            <div class="input-group">
+                <input type="text" placeholder={text[@language].profile.username_placeholder} value={@username} onInput={(e) => @username = e.target.value} />
+                <input type="password" placeholder={text[@language].profile.password_placeholder} value={@password} onInput={(e) => @password = e.target.value} />
+                <button type="submit" onClick={() => login(@username, @password, loggedIn)}>{text[@language].profile.submit}</button>
+            </div>
+        </div>
+    }
+
+
 
     <style>
         div {

@@ -19,7 +19,11 @@
             "title": "Paramètres",
             "mal_placeholder": "Nom d'utilisateur MyAnimeList",
             "advice": "Entrez votre nom d'utilisateur MyAnimeList pour obtenir des recommandations personnalisées.",
-            "username_placeholder": "Nom d'utilisateur"
+            "username_placeholder": "Nom d'utilisateur",
+            "password_placeholder": "Mot de Passe",
+            "submit": "Connexion",
+            "logged": "Vous êtes connecté en tant que : ",
+            "logout": "Déconnexion"
         }
     },
     "en": {
@@ -42,7 +46,11 @@
             "title": "Settings",
             "mal_placeholder": "MyAnimeList Username",
             "advice": "Enter your MyAnimeList username to get personalized recommendations.",
-            "username_placeholder": "Username"
+            "username_placeholder": "Username",
+            "password_placeholder": "Password",
+            "submit": "Submit",
+            "logged": "Connected as: ",
+            "logout": "Log Out"
         }
     }
 }
