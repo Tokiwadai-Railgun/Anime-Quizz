@@ -2,7 +2,9 @@
     "fr": {
         "navbar" : {
             "play": "Jouer",
-            "profile": "Paramètres"
+            "profile": "Paramètres",
+            "leaderboard": "Leaderboard",
+            "theme": "Changer de Theme"
         },
         "play": {
             "title": "Jouer en tant que : ",
@@ -16,20 +18,30 @@
             "mid_score": "Pas mal, tu peux tenter mieux ?"
         },
         "profile": {
-            "title": "Paramètres",
+            "title": "Profile",
             "mal_placeholder": "Nom d'utilisateur MyAnimeList",
             "advice": "Entrez votre nom d'utilisateur MyAnimeList pour obtenir des recommandations personnalisées.",
             "username_placeholder": "Nom d'utilisateur",
             "password_placeholder": "Mot de Passe",
             "submit": "Connexion",
             "logged": "Vous êtes connecté en tant que : ",
-            "logout": "Déconnexion"
+            "logout": "Déconnexion",
+            "register": "S'inscrire"
+
+        },
+        "leaderboard":  {
+            "title": "Leaderboard",
+            "username": "Pseudo",
+            "score": "Score",
+            "date": "Date"
         }
     },
     "en": {
         "navbar" : {
             "play": "Play",
-            "profile": "Settings"
+            "profile": "Settings",
+            "leaderboard": "Leaderboard",
+            "theme": "Change Theme"
         },
         "play": {
             "title": "Play as : ",
@@ -43,14 +55,21 @@
             "mid_score": "Not bad, you can do better!"
         },
         "profile": {
-            "title": "Settings",
+            "title": "Profile",
             "mal_placeholder": "MyAnimeList Username",
             "advice": "Enter your MyAnimeList username to get personalized recommendations.",
             "username_placeholder": "Username",
             "password_placeholder": "Password",
-            "submit": "Submit",
+            "submit": "Log in",
             "logged": "Connected as: ",
-            "logout": "Log Out"
+            "logout": "Log Out",
+            "register": "Register"
+        },
+        "leaderboard":  {
+            "title": "Leaderboard",
+            "username": "Username",
+            "score": "Score",
+            "date": "Date"
         }
     }
 }

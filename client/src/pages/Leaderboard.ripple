@@ -1,0 +1,100 @@
+    import { track } from "ripple";
+    import text from "../text.json";
+
+    export component Leaderboard({ language, lightTheme }: { language: Tracked<string>, lightTheme: Tracked<boolean>}) {
+        let ready = track(false);
+        let error = track("");
+        let data = track();
+        let index = track(1);
+        // Query the API to get the leaderboard
+        async function leaderboardQuery() {
+            const res = await fetch("http://localhost:3003/leaderboard");
+            if (!res.ok) {
+                @error = "An error occured, please reload the page"; 
+                return;
+            }
+
+            @data = await res.json()
+            @ready = true
+            return true;
+        }
+
+        const result = leaderboardQuery();
+        <h1 class={[{light: @lightTheme}]}>{text[@language].leaderboard.title}</h1>
+
+
+        if (@ready) {
+            // Using divs and not table here because table was not handled correctly by ripple
+            <div class="leaderboard">
+                <div class={[ "header", {light: @lightTheme}]} >
+                    <div class={[ "cell", {light: @lightTheme}]}>{"#"}</div>
+                    <div class={[ "cell", {light: @lightTheme}]}>{text[@language].leaderboard.username}</div>
+                    <div class={[ "cell", {light: @lightTheme}]}>{text[@language].leaderboard.score}</div>
+                    <div class={[ "cell", {light: @lightTheme}]}>{text[@language].leaderboard.date}</div>
+                </div>
+                <div class="body">
+                    for (let user of @data) {
+                        <div class="row">
+                            <div class={[ "cell", {light: @lightTheme}]}>{@index}</div>
+                            <div class={[ "cell", {light: @lightTheme}]}>{user.username}</div>
+                            <div class={[ "cell", {light: @lightTheme}]}>{user.score}</div>
+                            <div class={[ "cell", {light: @lightTheme}]}>{user.created_at}</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        } else {
+            <p>{@error}</p>
+        }
+
+
+
+
+    <style>
+        h1 {
+            color: var(--text);
+        }
+
+        .leaderboard {
+            margin: 0 20em;
+        }
+        
+        .error {
+            color: var(--red);
+        }
+        
+        .header {
+            display: grid;
+            grid-template-columns: 60px 1fr 100px 150px;
+            gap: 8px;
+            padding: 12px 8px;
+            font-weight: bold;
+            background: var(--surface1);
+            border-bottom: 2px solid var(--surface2);
+        }
+        
+        .cell {
+            color: var(--text)
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 60px 1fr 100px 150px;
+            gap: 8px;
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--surface1);
+        }
+        
+        .row:hover {
+            background: var(--surface0);
+        }
+
+        .light {
+            color: var(--text-light);
+        }
+
+        .header.light {
+            background: var(--surface1-light)
+        }
+    </style>
+}

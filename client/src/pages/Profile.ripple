@@ -17,6 +17,35 @@ async function login(username, password, status: Tracked<boolean>) {
     }
 }
 
+async function register(username, password, status: Tracked<boolean>) {
+    console.log("querrying")
+    const res = await fetch("http://localhost:3003/register", {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: username, password: password }),
+        credentials: "include",
+        method: "POST"
+    })
+
+    if (!res.ok) {
+        return;
+    }
+
+    const loginRes = await fetch("http://localhost:3003/login", {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: username, password: password }),
+        credentials: "include",
+        method: "POST"
+    })
+
+    if (loginRes.ok) {
+        @status = true
+    }
+}
+
 async function logout(status: Tracked<boolean>) {
     const res = await fetch("http://localhost:3003/logout", {
         method: "POST",
@@ -29,22 +58,25 @@ async function logout(status: Tracked<boolean>) {
 }
 
 
-export component Profile({ language, username, loggedIn }: { language: Tracked<string>, username: Tracked<string>, loggedIn: Tracked<boolean>}) {
+export component Profile({ language, username, loggedIn, lightTheme }: { language: Tracked<string>, username: Tracked<string>, loggedIn: Tracked<boolean>, lightTheme: Tracked<boolean>}) {
     let password = track("");
 
     if (@loggedIn) {
         <div>
-            <p>{text[@language].profile.logged + @username}</p>
-            <button type="submit" onclick={() => logout(loggedIn)}>{text[@language].profile.logout}</button>
+            <p class={[{light: @lightTheme}]}>{text[@language].profile.logged + @username}</p>
+            <button class={[{light: @lightTheme}]} type="submit" onclick={() => logout(loggedIn)}>{text[@language].profile.logout}</button>
         </div>
     } else {
-        <div>
-            <h1>{text[@language].profile.title}</h1>
+        <div >
+            <h1 class={[{light: @lightTheme}]}>{text[@language].profile.title}</h1>
 
             <div class="input-group">
-                <input type="text" placeholder={text[@language].profile.username_placeholder} value={@username} onInput={(e) => @username = e.target.value} />
-                <input type="password" placeholder={text[@language].profile.password_placeholder} value={@password} onInput={(e) => @password = e.target.value} />
-                <button type="submit" onClick={() => login(@username, @password, loggedIn)}>{text[@language].profile.submit}</button>
+                <input class={[{light: @lightTheme}]} type="text" placeholder={text[@language].profile.username_placeholder} value={@username} onInput={(e) => @username = e.target.value} />
+                <input class={[{light: @lightTheme}]} type="password" placeholder={text[@language].profile.password_placeholder} value={@password} onInput={(e) => @password = e.target.value} />
+                <div  class="buttons">
+                    <button class={[{light: @lightTheme}]} type="submit" onClick={() => login(@username, @password, loggedIn)}>{text[@language].profile.submit}</button>
+                    <button class={[{light: @lightTheme}]} type="submit" onClick={() => register(@username, @password, loggedIn)}>{text[@language].profile.register}</button>
+                </div>
             </div>
         </div>
     }
@@ -89,5 +121,41 @@ export component Profile({ language, username, loggedIn }: { language: Tracked<s
             align-items: center;
             gap: 10px;
         }
+
+        button:hover {
+            background-color: var(--surface2);
+        }
+        button {
+            padding: 0.7em 1.4em;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--surface1);
+            color: var(--text);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1em;
+        }
+
+        .light {
+            color: var(--text-light);
+        }
+
+        button.light {
+            background: var(--surface1-light)
+        }
+
+        button.light:hover {
+            background: var(--surface2-light)
+        }
+
+        input.light {
+            background: var(--surface1-light)
+        }
+
+
     </style>
 }

@@ -1,28 +1,60 @@
 import { track } from 'ripple';
 import { NavBar } from './components/NavBar.ripple';
 import { Profile } from './pages/Profile.ripple';
+import { Leaderboard } from "./pages/Leaderboard.ripple";
 import { Play } from './pages/Play.ripple';
 import text from './text.json';
 
 export component App() {
-	<div class='container'>
+  let lightTheme = track(false)
+	<div class={['container', { "light": @lightTheme}]}>
     let language = track('en');
     let page = track('play');
 
     let username = track("guest");
     let loggedIn = track(false);
 
-    <NavBar {language} {page} />
+    <NavBar {language} {page} {lightTheme} />
  
     if (@page === 'play') {
-      <Play {language} {username}  {loggedIn} />
+      <Play {language} {username}  {loggedIn} {lightTheme} />
     }
     else if (@page === 'profile') {
-      <Profile {language} {username} {loggedIn} />
-    } 
+      <Profile {language} {username} {loggedIn} {lightTheme} />
+    } else if (@page === 'leaderboard') {
+      <Leaderboard {language} {lightTheme}/>
+    }
 	</div>
 
   <style>
+    /* Catpuccin color palette */
+    :global(:root) {
+      --red: #f38ba8;
+      --surface0: #1e1e2e;
+      --surface1: #313244;
+      --surface2: #45475a;
+      --text: #cdd6f4;
+      --mantle: #181825;
+      --crust: #11111b;
+
+      --red-light: #d20f39;
+      --surface0-light: #eff1f5;
+      --surface1-light: #e6e9ef;
+      --surface2-light: #ccd0da;
+      --text-light: #4c4f69;
+      --mantle-light: #e6e9ef;
+      --crust-light: #dce0e8;
+    }
+
+    :global(body) {
+      margin: 0;
+      padding: 0;
+      background-color: var(--crust);
+      color: var(--text);
+    }
+    h1 {
+      color: var(--text)
+    }
     .container {
       text-align: center;
       font-family: "Arial", sans-serif;
@@ -57,6 +89,16 @@ export component App() {
     .count {
       margin: 0 12px;
       font-size: 1.5em;
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      background: @colors.background;
+    }
+
+    .light {
+      background: var(--crust-light);
     }
   </style>
 }

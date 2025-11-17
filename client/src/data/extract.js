@@ -43,21 +43,78 @@ function similarity(s1, s2) {
   return levenshtein(longer, shorter) / longer.length;
 }
 
+// Extraction du titre de base (sans les suffixes de saison/film)
+function extractBaseTitle(title) {
+  // Retire les patterns courants de suite/saison/film
+  return title
+    .toLowerCase()
+    // Retire les saisons avec numéros romains ou arabes
+    .replace(/\b(season|s)\s*[0-9ivxlcdm]+\b/gi, "")
+    // Retire les parties/cours
+    .replace(/\b(part|cour)\s*\d+\b/gi, "")
+    // Retire les indicateurs ordinaux (2nd, 3rd, etc.)
+    .replace(/\b\d+(st|nd|rd|th)\s+(season|part|cour)?\b/gi, "")
+    // Retire les suffixes de continuation
+    .replace(/[''′]\s*$/g, "") // apostrophes en fin
+    .replace(/\s*:\s*(enchousen|gintama|final chapter|final|kanketsu-hen|shippuden|next generations|shippuuden|boruto|brotherhood|alicization|war of underworld)\b/gi, "")
+    // Retire les types de média
+    .replace(/\b(movie|film|ova|ona|special|tv|gekijouban|kanketsu-hen)\b\s*\d*/gi, "")
+    // Retire les numéros standalone
+    .replace(/\b\d+\b/g, "")
+    // Retire les subtitles après ':' ou '-'
+    .replace(/\s*[:\-–—]\s*.+$/, "")
+    // Retire ponctuation excessive
+    .replace(/[()[\]!?]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // Normalisation des titres pour améliorer le matching
 function normalizeTitle(title) {
   return title
     .toLowerCase()
-    .replace(/[:\-–—]/g, " ") // remplace ponctuation par espace
-    .replace(/\s+/g, " ") // normalise espaces multiples
-    .replace(/\b(season|part|cour|2nd|3rd|movie|ova|special|final|the final|specials|gekijouban)\b\s*\d*/gi, "") // retire saisons/parties/finales
-    .replace(/\d+(st|nd|rd|th)?/g, "") // retire chiffres avec suffixes ordinaux
-    .replace(/[()[\]]/g, "") // retire parenthèses et crochets
-    .replace(/\s+/g, " ") // normalise espaces multiples
+    .replace(/[:\-–—]/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[()[\]]/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
-// Regroupement des animes similaires
-function groupSimilarAnimes(animeList, threshold = 0.5) {
+// Vérifie si deux titres appartiennent à la même série
+function isSameSeries(title1, title2) {
+  const base1 = extractBaseTitle(title1);
+  const base2 = extractBaseTitle(title2);
+  
+  // Si les titres de base sont très courts (< 3 caractères), sois plus strict
+  if (base1.length < 3 || base2.length < 3) {
+    return base1 === base2;
+  }
+  
+  // Calcule la similarité sur les titres de base
+  const baseScore = similarity(base1, base2);
+  
+  // Si les bases sont très similaires (< 0.2), c'est probablement la même série
+  if (baseScore < 0.2) {
+    return true;
+  }
+  
+  // Vérifie si l'un est un sous-ensemble de l'autre (ex: "gintama" dans "gintama enchousen")
+  const norm1 = normalizeTitle(title1);
+  const norm2 = normalizeTitle(title2);
+  
+  if (norm1.includes(base1) && norm2.includes(base1) && base1.length > 3) {
+    return true;
+  }
+  
+  if (norm1.includes(base2) && norm2.includes(base2) && base2.length > 3) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Regroupement des animes similaires avec détection améliorée des séries
+function groupSimilarAnimes(animeList) {
   const groups = [];
   const processed = new Set();
   
@@ -68,10 +125,8 @@ function groupSimilarAnimes(animeList, threshold = 0.5) {
       canonical_title: animeList[i].anime_title,
       anime_ids: [animeList[i].anime_id],
       anime_titles: [animeList[i].anime_title],
-      characters: new Map() // utilise Map pour dédupliquer par ID
+      characters: new Map()
     };
-    
-    const normalized_i = normalizeTitle(animeList[i].anime_title);
     
     // Ajouter les personnages du premier anime
     for (const char of animeList[i].characters) {
@@ -80,14 +135,11 @@ function groupSimilarAnimes(animeList, threshold = 0.5) {
     
     processed.add(i);
     
-    // Chercher les animes similaires
+    // Chercher les animes de la même série
     for (let j = i + 1; j < animeList.length; j++) {
       if (processed.has(j)) continue;
       
-      const normalized_j = normalizeTitle(animeList[j].anime_title);
-      const score = similarity(normalized_i, normalized_j);
-      
-      if (score <= threshold) {
+      if (isSameSeries(animeList[i].anime_title, animeList[j].anime_title)) {
         group.anime_ids.push(animeList[j].anime_id);
         group.anime_titles.push(animeList[j].anime_title);
         
@@ -190,4 +242,4 @@ async function main() {
   console.log(`Personnages uniques: ${grouped.reduce((sum, g) => sum + g.characters.length, 0)}`);
 }
 
-main().catch(console.error); 
+main().catch(console.error);

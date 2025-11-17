@@ -24,7 +24,7 @@ app.get('/', async (c) => {
 
 app.get("/leaderboard", async (c) => {
     const res = await db.execute("SELECT * FROM leaderboard");
-    return c.json(res.rows[0]);
+    return c.json(res.rows);
 })
 
 app.post("/logout", async (c) => {
@@ -103,6 +103,7 @@ SELECT score FROM users WHERE id = ?
         return c.json({ success: true });
     }
 
+    console.log("Updating score of " + userId)
     await db.execute({
         sql: `
 UPDATE users SET score = ? WHERE id = ?
@@ -140,7 +141,7 @@ VALUES (?, ?)
         return c.json({ success: false, error: "Username already exists" }, 409)
     }
 
-
+    console.log("registered user " + username);
     return c.json({ success: true })
 });
 
@@ -163,6 +164,7 @@ app.post("/login", async (c) => {
 
     const user = into<User>(result.rows[0]);
     if (!user) {
+        console.log("Unknow user")
         return c.json({ success: false, error: "Invalid username or password" }, 401)
     }
 
@@ -174,7 +176,7 @@ app.post("/login", async (c) => {
 
     // Create session
     const token = crypto.randomBytes(32).toString("hex")
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() // 24h
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString()
 
     await db.execute({
         sql: `

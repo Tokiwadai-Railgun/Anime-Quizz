@@ -9,7 +9,7 @@ function extractCharacters() {
 
     for (let i = 0; i < 10; i ++) {
         // Select the anime to pick a character
-        let randomNumber = Math.floor(Math.random() * 20); 
+        let randomNumber = Math.floor(Math.random() * characters.length); 
 
         // then pick a random character from this anime
         let characterListLength = characters[randomNumber].characters.length;
@@ -39,14 +39,14 @@ function generateButtons(animeList: any, correctAnime: string) {
     list.push(correctAnime);
 
     for (let i = 0; i < 3; i++) {
-        let index = Math.floor(Math.random() * animeList.length);
+        let index = Math.floor(Math.random() * characters.length);
         
 
         // to avoid getting multiple times the same title
         if (!list.includes(animeList[index])) {
-            console.log(animeList[index]);
+            console.log("Anime is : ", characters[index]);
             console.log(list);
-            list.push(animeList[index]);
+            list.push(characters[index].canonical_title);
         } else {
             i--;
         }
@@ -66,15 +66,15 @@ function generateButtons(animeList: any, correctAnime: string) {
     return list;
 }
 
-export component Play( { language, username, loggedIn }: { language: Tracked<string>, username: Tracked<string>, loggedIn: Tracked<boolean>} ) {
+export component Play( { language, username, loggedIn, lightTheme }: { language: Tracked<string>, username: Tracked<string>, loggedIn: Tracked<boolean>, lightTheme: Tracked<boolean>} ) {
     let gameToggle = track(0); // 0 = not started, 1 = started, 2 = ended
     let totalScore = track(0);
 
     if (@gameToggle == 0) {
         <div>
-            <h1>{text[@language].play.title + @username + " ?"}</h1>
+            <h1 class={[{light: @lightTheme}]} >{text[@language].play.title + @username + " ?"}</h1>
 
-            <button type="submit" onClick={() => @gameToggle = true}>
+            <button class={[{light: @lightTheme}]} type="submit" onClick={() => @gameToggle = true}>
                 {text[@language].play.start}
             </button>
         </div>
@@ -96,7 +96,7 @@ export component Play( { language, username, loggedIn }: { language: Tracked<str
                 console.log(buttonList);
 
                 for (const button of charactersList[@charIndex].buttons) {
-                    <button onClick={() => {
+                    <button class={[{light: @lightTheme}]} onClick={() => {
                         if (button == charactersList[@charIndex].anime) {
                             @correct = 1;
                         } else {
@@ -120,7 +120,7 @@ export component Play( { language, username, loggedIn }: { language: Tracked<str
             }
 
             if (@correct != 0) {
-                <button onClick={() => {
+                <button class={[{light: @lightTheme}]} onClick={() => {
                     @charIndex = @charIndex + 1;
                     @correct = 0;
                     if (@charIndex >= 10) {
@@ -133,7 +133,7 @@ export component Play( { language, username, loggedIn }: { language: Tracked<str
         </div>
     } else {
         // Send the result to the database
-        const res = fetch("http://localhost:3003/score", {
+        fetch("http://localhost:3003/score", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -141,13 +141,13 @@ export component Play( { language, username, loggedIn }: { language: Tracked<str
             body: JSON.stringify({ username: @username, score: @totalScore}),
             credentials: "include"
         })
-        <h1>{"Score : " + @totalScore + " / 10"}</h1>
+        <h1 class={[{light: @lightTheme}]}>{"Score : " + @totalScore + " / 10"}</h1>
         if (@totalScore == 10) {
-            <p>{text[@language].play.critical_success}</p>
-        } else if (@totalScore >= 0) {
-            <p>{text[@language].play.critical_failure}</p>
+            <p class={[{light: @lightTheme}]}>{text[@language].play.critical_success}</p>
+        } else if (@totalScore < 5) {
+            <p class={[{light: @lightTheme}]}>{text[@language].play.critical_failure}</p>
         } else {
-            <p>{text[@language].play.mid_score}</p>
+            <p class={[{light: @lightTheme}]}>{text[@language].play.mid_score}</p>
         }
     }
 
@@ -192,6 +192,18 @@ export component Play( { language, username, loggedIn }: { language: Tracked<str
 
         button:hover {
             background-color: var(--surface2);
+        }
+        
+        .light {
+            color: var(--text-light);
+        }
+
+        button.light {
+            background: var(--surface1-light)
+        }
+
+        button.light:hover {
+            background: var(--surface2-light)
         }
 
 

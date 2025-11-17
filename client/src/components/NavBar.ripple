@@ -1,24 +1,23 @@
 import text from "../text.json";
 
-export component NavBar({ language, page }: { language: Tracked<string>, page: Tracked<string> }) {
-    <div class='navbar-container'>
+export component NavBar({ language, page, lightTheme }: { language: Tracked<string>, page: Tracked<string>, lightTheme: Tracked<boolean> }) {
+    <div class={['navbar-container', { "light": @lightTheme}]}>
         // Since ripple.js does not support routing for now (maybe never ..) we will use buttons & tracked variables to render differents tabs from the App.ripple
-        <div class='navbar'>
-            <button onClick={() => @page = 'play'}>{text[@language].navbar.play}</button>
-            <button onClick={() => @page = 'profile'}>{text[@language].navbar.profile}</button>
+        <div class={['navbar', { "light": @lightTheme}]}>
+            <button class={[{ "light": @lightTheme}]} onClick={() => @page = 'play'}>{text[@language].navbar.play}</button>
+            <button class={[{ "light": @lightTheme}]} onClick={() => @page = 'profile'}>{text[@language].navbar.profile}</button>
+            <button class={[{ "light": @lightTheme}]} onClick={() => @page = 'leaderboard'}>{text[@language].navbar.leaderboard}</button>
         </div> 
 
         // add a language selector at the end of the navbar
-        <div class='language-selector'>
-            <select onChange={(e) => @language = e.target.value} value={@language}>
+        <div class={[ "language-selector", { "light": @lightTheme}]}>
+            <button class={[{ "light": @lightTheme}]} onClick={() => @lightTheme = !@lightTheme}>{text[@language].navbar.theme}</button>
+            <select class={[{ "light": @lightTheme}]} onChange={(e) => @language = e.target.value} value={@language}>
                 <option value='en'>{'English'}</option>
                 <option value='fr'>{'Français'}</option>
             </select>
         </div>
     </div>
-
-
-
 
 
     // style is done with the catpuccin palette, color defined using variables, all the variables are in the index.html
@@ -32,7 +31,7 @@ export component NavBar({ language, page }: { language: Tracked<string>, page: T
             border-bottom: 2px solid var(--surface0);
         }
 
-        .navbar button {
+        button {
             background: none;
             border: none;
             color: var(--text);
@@ -44,7 +43,7 @@ export component NavBar({ language, page }: { language: Tracked<string>, page: T
             transition: background-color 0.3s, color 0.3s;
         }
 
-        .navbar button:hover {
+        button:hover {
             background-color: var(--surface0);
         }
 
@@ -61,5 +60,27 @@ export component NavBar({ language, page }: { language: Tracked<string>, page: T
         .language-selector select:hover {
             background-color: var(--surface0);
         }
+
+        .navbar-container.light {
+            background: var(--mantle-light);
+            border-bottom: 2px solid var(--surface0-light);
+        }
+
+        button.light {
+            color: var(--text-light);
+        }
+        button.light:hover {
+            background-color: var(--surface0-light);
+        }
+
+        .language-selector select.light {
+            border: 1px solid var(--surface0-light);
+            background-color: var(--mantle-light);
+            color: var(--text-light);
+        }
+        .language-selector select.light:hover {
+            background-color: var(--surface0-light);
+        }
+
     </style>
 }
