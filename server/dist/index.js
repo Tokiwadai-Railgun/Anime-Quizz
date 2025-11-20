@@ -1,0 +1,216 @@
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { createClient } from '@libsql/client';
+import { hash, verify } from 'argon2';
+import crypto from "crypto";
+import { cors } from 'hono/cors';
+import { getCookie, setCookie } from 'hono/cookie';
+const db = createClient({ url: "file:database.db" });
+const app = new Hono();
+app.use("*", cors({
+    origin: "http://localhost:3000",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    credentials: true
+}));
+initDatabase();
+app.get('/', async (c) => {
+    return c.text("Welcome to the api, please use the README to get all the possible endpoints");
+});
+app.get("/leaderboard", async (c) => {
+    const res = await db.execute("SELECT * FROM leaderboard");
+    return c.json(res.rows);
+});
+app.post("/logout", async (c) => {
+    const token = getCookie(c, "session");
+    if (!token) {
+        return c.json({ success: false, error: "No session" }, 401);
+    }
+    // Remove session from DB
+    await db.execute({
+        sql: `DELETE FROM sessions WHERE token = ?`,
+        args: [token]
+    });
+    // Delete the cookie
+    setCookie(c, "session", "", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "Lax",
+        maxAge: 0,
+        path: "/"
+    });
+    return c.json({ success: true });
+});
+app.post("/score", async (c) => {
+    console.log("Request received");
+    if (!c.req.header("Content-Type")?.includes("application/json")) {
+        return c.json({ success: false, error: "Invalid Content-Type" }, 400);
+    }
+    const token = getCookie(c, "session");
+    if (!token) {
+        return c.json({ success: false, error: "Missing session token" }, 401);
+    }
+    const { score } = await c.req.json();
+    if (typeof score !== "number") {
+        return c.json({ success: false, error: "Missing or invalid fields" }, 400);
+    }
+    // Verify session
+    const sessionRes = await db.execute({
+        sql: `
+SELECT user_id, expires_at FROM sessions WHERE token = ?
+`,
+        args: [token]
+    });
+    // Verifying that the session is valid & with correct expiration
+    const session = into(sessionRes.rows[0]);
+    if (!session) {
+        return c.json({ success: false, error: "Invalid session" }, 401);
+    }
+    if (new Date(session.expires_at).getTime() < Date.now()) {
+        return c.json({ success: false, error: "Session expired" }, 401);
+    }
+    const userId = session.user_id;
+    // Update score
+    const result = await db.execute({
+        sql: `
+SELECT score FROM users WHERE id = ?
+`,
+        args: [userId]
+    });
+    const currentScore = into(result.rows[0]);
+    if (currentScore.score > score) {
+        return c.json({ success: true });
+    }
+    console.log("Updating score of " + userId);
+    await db.execute({
+        sql: `
+UPDATE users SET score = ? WHERE id = ?
+`,
+        args: [score, userId]
+    });
+    return c.json({ success: true });
+});
+app.post("/register", async (c) => {
+    // Check the header
+    if (!c.req.header("Content-Type")?.includes("application/json")) {
+        return c.json({ success: false, error: "Invalid Content-Type" }, 400);
+    }
+    const { username, password } = await c.req.json();
+    if (!username || !password) {
+        return c.json({ success: false, error: "Missing fields" }, 400);
+    }
+    // register the user in the db
+    const passwordHash = await hash(password);
+    try {
+        await db.execute({
+            sql: `
+INSERT INTO users (username, password_hash)
+VALUES (?, ?)
+`,
+            args: [username, passwordHash]
+        });
+    }
+    catch (err) {
+        return c.json({ success: false, error: "Username already exists" }, 409);
+    }
+    console.log("registered user " + username);
+    return c.json({ success: true });
+});
+// authenticate the user and return session token
+app.post("/login", async (c) => {
+    if (!c.req.header("Content-Type")?.includes("application/json")) {
+        return c.json({ success: false, error: "Invalid Content-Type" }, 400);
+    }
+    const { username, password } = await c.req.json();
+    if (!username || !password) {
+        return c.json({ error: "Missing fields" }, 400);
+    }
+    // retrieve the user
+    const result = await db.execute({
+        sql: `SELECT id, password_hash FROM users WHERE username = ?`,
+        args: [username]
+    });
+    const user = into(result.rows[0]);
+    if (!user) {
+        console.log("Unknow user");
+        return c.json({ success: false, error: "Invalid username or password" }, 401);
+    }
+    // Verify password
+    const validPass = await verify(user.password_hash, password);
+    if (!validPass) {
+        return c.json({ success: false, error: "Invalid username or password" }, 401);
+    }
+    // Create session
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
+    await db.execute({
+        sql: `
+INSERT INTO sessions (user_id, token, expires_at)
+VALUES (?, ?, ?)
+`,
+        args: [user.id, token, expiresAt]
+    });
+    setCookie(c, "session", token, {
+        httpOnly: false,
+        sameSite: "Lax",
+        secure: false,
+        maxAge: 60 * 60 * 24,
+        path: "/"
+    });
+    return c.json({
+        success: true,
+        token,
+        expiresAt
+    });
+});
+function into(row) {
+    return row;
+}
+const server = serve({
+    fetch: app.fetch,
+    port: 3003
+}, (info) => {
+    console.log(`Server is running on http://localhost:${info.port}`);
+});
+process.on("SIGINT", () => {
+    server.close();
+    console.log("Closing");
+    process.exit(0);
+});
+process.on('SIGTERM', () => {
+    server.close((err) => {
+        if (err) {
+            console.error(err);
+            process.exit(1);
+        }
+        process.exit(0);
+    });
+});
+export async function initDatabase() {
+    await db.execute(`
+CREATE TABLE IF NOT EXISTS users (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+username TEXT UNIQUE NOT NULL,
+password_hash TEXT NOT NULL,
+score INTEGER NOT NULL DEFAULT 0,
+created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+`);
+    await db.execute(`
+CREATE TABLE IF NOT EXISTS sessions (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user_id INTEGER NOT NULL,
+token TEXT UNIQUE NOT NULL,
+expires_at TEXT NOT NULL,
+created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+`);
+    await db.execute(`
+CREATE VIEW IF NOT EXISTS leaderboard AS
+SELECT id, username, score, created_at
+FROM users
+ORDER BY score DESC, created_at ASC;
+`);
+    console.log("Successfully initialised database");
+}
